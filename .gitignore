@@ -1,0 +1,15 @@
+# Maven
+target/
+*.log
+
+# IDE / Tooling
+.vscode/
+.vscode-server
+.idea/
+*.iml
+
+# OS
+.DS_Store
+
+# Misc
+*.swp
