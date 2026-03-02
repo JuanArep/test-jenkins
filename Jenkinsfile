@@ -85,17 +85,26 @@ pipeline {
           set -e
           JAR=$(ls -1 target/*.jar | head -n 1)
 
-          # Start app in background on 8081 to avoid collisions
+          echo "Starting app from $JAR on port 8081..."
           nohup java -jar "$JAR" --server.port=8081 > app.log 2>&1 &
           APP_PID=$!
+          echo "App PID: $APP_PID"
 
-          # Wait briefly then hit endpoint
-          sleep 5
+          # Wait up to 60s for the endpoint to respond
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8081/api/hello | grep -q "hello"; then
+              echo "Smoke test passed"
+              break
+            fi
+            echo "Waiting for app... attempt $i/30"
+            sleep 2
+          done
+
+          # Final check (ensures we fail if never became ready)
           curl -fsS http://localhost:8081/api/hello | grep -q "hello"
 
           # Cleanup
           kill $APP_PID
-          echo "Smoke test passed"
         '''
       }
       post {
