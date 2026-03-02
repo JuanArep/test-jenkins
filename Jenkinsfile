@@ -104,7 +104,7 @@ pipeline {
           curl -fsS http://localhost:8081/api/hello | grep -q "hello"
 
           # Cleanup
-          kill $APP_PID
+          kill $APP_PID || true
         '''
       }
       post {
