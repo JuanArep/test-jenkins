@@ -18,6 +18,7 @@ pipeline {
       steps {
         sh 'mvn -B clean test'
       }
+      post {
       always {
         junit testResults: 'target/surefire-reports/*.xml', allowEmptyResults: false
       }
