@@ -14,15 +14,6 @@ pipeline {
   }
 
   stages {
-    stage('Checkout') {
-      steps {
-        checkout scm
-      }
-      post {
-        success { echo "Checkout completed" }
-      }
-    }
-
     stage('Build & Unit Test') {
       steps {
         sh 'mvn -B clean test'
