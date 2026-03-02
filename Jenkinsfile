@@ -18,8 +18,8 @@ pipeline {
       steps {
         sh 'mvn -B clean test'
       }
-      post {
-        success { echo "Tests passed" }
+      always {
+        junit testResults: 'target/surefire-reports/*.xml', allowEmptyResults: false
       }
     }
 
