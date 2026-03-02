@@ -2,14 +2,11 @@ pipeline {
   agent any
 
   environment {
-    // SonarQube project key (must be unique in SonarQube)
     SONAR_PROJECT_KEY = "my-spring-ci"
     SONAR_HOST_URL    = "http://localhost:9000"
   }
 
   triggers {
-    // For local WSL Jenkins, GitHub webhook is often not reachable.
-    // Poll SCM every 2 minutes for now. You can switch to webhooks later.
     pollSCM('H/2 * * * *')
   }
 
@@ -19,15 +16,14 @@ pipeline {
         sh 'mvn -B clean test'
       }
       post {
-      always {
-        junit testResults: 'target/surefire-reports/*.xml', allowEmptyResults: false
+        always {
+          junit testResults: 'target/surefire-reports/*.xml', allowEmptyResults: false
+        }
       }
     }
 
     stage('SonarQube Scan') {
       steps {
-        // Uses Jenkins-configured SonarQube server context if plugin is installed.
-        // If withSonarQubeEnv is unavailable, we’ll fall back to explicit args.
         script {
           try {
             withSonarQubeEnv('sonarqube') {
@@ -50,8 +46,6 @@ pipeline {
 
     stage('Quality Gate') {
       steps {
-        // Requires SonarQube webhook to Jenkins for best behavior.
-        // If not configured, this may time out. It's still useful to learn the concept.
         timeout(time: 5, unit: 'MINUTES') {
           waitForQualityGate abortPipeline: true
         }
@@ -82,7 +76,6 @@ pipeline {
           APP_PID=$!
           echo "App PID: $APP_PID"
 
-          # Wait up to 60s for the endpoint to respond
           for i in $(seq 1 30); do
             if curl -fsS http://localhost:8081/api/hello | grep -q "hello"; then
               echo "Smoke test passed"
@@ -92,11 +85,9 @@ pipeline {
             sleep 2
           done
 
-          # Final check (ensures we fail if never became ready)
           curl -fsS http://localhost:8081/api/hello | grep -q "hello"
 
-          # Cleanup
-          kill $APP_PID || true
+          kill "$APP_PID" || true
         '''
       }
       post {
