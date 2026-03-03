@@ -1,4 +1,4 @@
-CI Pipeline: Spring Boot + Jenkins + Maven + SonarQube (WSL)
+# CI Pipeline: Spring Boot + Jenkins + Maven + SonarQube (WSL)
 
 Repo: https://github.com/JuanArep/test-jenkins.git
 
@@ -8,21 +8,21 @@ What this pipeline does
 
 On every change to the main branch (detected via Jenkins polling), the pipeline:
 
-Checks out code from GitHub
+1. Checks out code from GitHub
 
-Runs unit tests (mvn clean test)
+2. Runs unit tests (mvn clean test)
 
-Publishes JUnit test results in Jenkins
+3. Publishes JUnit test results in Jenkins
 
-Runs SonarQube static analysis (mvn sonar:sonar)
+4. Runs SonarQube static analysis (mvn sonar:sonar)
 
-Enforces SonarQube Quality Gate (waitForQualityGate)
+5. Enforces SonarQube Quality Gate (waitForQualityGate)
 
-Packages an executable Spring Boot JAR (mvn package -DskipTests)
+6. Packages an executable Spring Boot JAR (mvn package -DskipTests)
 
-Archives the JAR as a Jenkins build artifact
+7. Archives the JAR as a Jenkins build artifact
 
-Runs a smoke test by starting the JAR and calling GET /api/hello
+8. Runs a smoke test by starting the JAR and calling GET /api/hello
 
 Architecture / workflow
 flowchart LR
