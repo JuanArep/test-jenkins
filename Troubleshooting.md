@@ -61,82 +61,85 @@ Run in WSL:
 getent hosts github.com
 ping -c 1 github.com
 sudo -u jenkins getent hosts github.com
+```
 
 If you want a “service-like” check for the Jenkins user:
-
+```bash
 sudo systemd-run --uid=jenkins --pty /bin/bash -lc 'getent hosts github.com && curl -I https://github.com | head'
+```
 
 Fixes
 
 Restart Jenkins to clear stale runtime state:
-
+```bash
 sudo systemctl restart jenkins
-
+```
 If DNS is unstable after reboot/VPN changes, consider pinning resolvers (advanced):
 
 Disable WSL auto resolv.conf generation and set known DNS servers.
 
-5) sudo -u jenkins ... fails with: failed to stat ... Permission denied
+## 5) sudo -u jenkins ... fails with: failed to stat ... Permission denied
 
-Symptom
+**Symptom**
+- fatal: failed to stat '/home/<user>/<project>': Permission denied
 
-fatal: failed to stat '/home/<user>/<project>': Permission denied
+**Cause**
+-You ran a command as the jenkins user while your current directory was inside a path the jenkins user cannot access.
 
-Cause
-
-You ran a command as the jenkins user while your current directory was inside a path the jenkins user cannot access.
-
-Fix
-Run the command from a neutral directory like /tmp:
-
+**Fix**
+-Run the command from a neutral directory like /tmp:
+```bash
 cd /tmp
 sudo -u jenkins git ls-remote https://github.com/<user>/<repo>.git
-6) Jenkins workspace directory missing or permission issues
+```
+## 6) Jenkins workspace directory missing or permission issues
 
-Symptoms
+**Symptoms**
+- /var/lib/jenkins/workspace missing
+- permission denied during checkout/build
 
-/var/lib/jenkins/workspace missing
-
-permission denied during checkout/build
-
-Checks
+**Checks**
 Confirm Jenkins OS user exists:
 
+```bash
 id jenkins
 getent passwd jenkins
+```
 
-Fix
+**Fix**
 Create and grant ownership/permissions:
-
+```bash
 sudo mkdir -p /var/lib/jenkins/workspace
 sudo chown -R jenkins:jenkins /var/lib/jenkins/workspace
 sudo chmod -R u+rwX /var/lib/jenkins/workspace
 sudo -u jenkins bash -lc 'touch /var/lib/jenkins/workspace/_perm_test && rm /var/lib/jenkins/workspace/_perm_test'
-7) Jenkins error: Unable to find Jenkinsfile
+```
 
-Cause
+## 7) Jenkins error: Unable to find Jenkinsfile
 
-Jenkinsfile missing from the repo, or Script Path is wrong/case-mismatched.
+**Cause**
 
-Fix
+-Jenkinsfile missing from the repo, or Script Path is wrong/case-mismatched.
 
-Ensure the file is named exactly Jenkinsfile in the repo root.
+**Fix**
 
-In Jenkins job config: Script Path = Jenkinsfile.
+-Ensure the file is named exactly Jenkinsfile in the repo root.
 
-8) Maven error in Jenkins: There is no POM in this directory
+-In Jenkins job config: Script Path = Jenkinsfile.
 
-Symptom
+## 8) Maven error in Jenkins: There is no POM in this directory
 
-Please verify you invoked Maven from the correct directory. -> ... no POM in this directory
+**Symptom**
 
-Cause
+-Please verify you invoked Maven from the correct directory. -> ... no POM in this directory
 
-Repo did not contain a pom.xml at the workspace root being built.
+**Cause**
 
-Fix
+-Repo did not contain a pom.xml at the workspace root being built.
 
-Commit a valid Maven project to the repo root:
+**Fix**
+
+-Commit a valid Maven project to the repo root:
 
 pom.xml
 
@@ -144,103 +147,98 @@ src/main/...
 
 src/test/...
 
-9) Git push fails: GitHub password authentication not supported
+## 9) Git push fails: GitHub password authentication not supported
 
-Symptom
+**Symptom**
 
-GitHub rejects HTTPS password auth for git operations.
+-GitHub rejects HTTPS password auth for git operations.
 
-Fix
+**Fix**
 
-Use a GitHub Personal Access Token (PAT) as the “password” for HTTPS pushes.
+-Use a GitHub Personal Access Token (PAT) as the “password” for HTTPS pushes.
 
 Optional: store credentials in WSL to avoid retyping:
 
-git config --global credential.helper store
+```git config --global credential.helper store```
 
 Verify an entry exists (prints line number, not the secret):
 
-grep -n "github.com" ~/.git-credentials
-10) Git push rejected: non-fast-forward / divergent histories
+```grep -n "github.com" ~/.git-credentials```
 
-Symptom
+## 10) Git push rejected: non-fast-forward / divergent histories
 
-rejected (fetch first) or warnings about divergent branches.
+**Symptom**
 
-Cause
+-rejected (fetch first) or warnings about divergent branches.
 
-Remote repo had commits not present locally (e.g., files created in GitHub UI).
+**Cause**
 
-Fix (merge approach)
+-Remote repo had commits not present locally (e.g., files created in GitHub UI).
 
+**Fix (merge approach)**
+```bash
 git pull origin main --allow-unrelated-histories --no-rebase
 # resolve conflicts if prompted
 git push origin main
-
+```
 If a conflict occurs for a file like Jenkinsfile:
 
-Choose one side, git add <file>, then git commit to conclude the merge.
+Choose one side, ```git add <file>```, then git commit to conclude the merge.
 
-11) Quality Gate times out (waitForQualityGate)
+## 11) Quality Gate times out (waitForQualityGate)
 
-Symptom
+**Symptom**
+-Quality Gate stage times out while Sonar task is still IN_PROGRESS.
 
-Quality Gate stage times out while Sonar task is still IN_PROGRESS.
+**Cause**
 
-Cause
+-SonarQube → Jenkins webhook not configured or not reachable from the SonarQube container.
 
-SonarQube → Jenkins webhook not configured or not reachable from the SonarQube container.
-
-Fix
+**Fix**
 
 Find docker bridge IP:
-
+```bash
 ip -4 addr show docker0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}'
-
+```
 Test container → Jenkins connectivity:
-
+```bash
 docker exec -it sonarqube bash -lc "timeout 3 bash -c '</dev/tcp/172.17.0.1/8080' && echo CONNECT_OK || echo CONNECT_FAIL"
-
+```
 Configure SonarQube webhook:
 
-URL: http://172.17.0.1:8080/sonarqube-webhook/
+URL: ```http://172.17.0.1:8080/sonarqube-webhook/```
 
-12) Smoke test fails: no main manifest attribute
+## 12) Smoke test fails: no main manifest attribute
 
-Symptom
+**Symptom**
+-no main manifest attribute, in target/<app>.jar
 
-no main manifest attribute, in target/<app>.jar
+**Cause**
+-The jar produced is not a Spring Boot executable jar.
 
-Cause
+**Fix**
+- Ensure Spring Boot packaging is configured correctly in pom.xml:
 
-The jar produced is not a Spring Boot executable jar.
-
-Fix
-
-Ensure Spring Boot packaging is configured correctly in pom.xml:
-
-Use spring-boot-starter-parent
+```Use spring-boot-starter-parent```
 
 Configure spring-boot-maven-plugin with repackage
 
 Explicitly set the application main class if needed, e.g.:
 
-com.example.demo.DemoApplication
+```com.example.demo.DemoApplication```
 
-13) Declarative pipeline syntax errors (e.g., Unknown stage section "always")
+## 13) Declarative pipeline syntax errors (e.g., Unknown stage section "always")
 
-Cause
+**Cause**
+-Incorrect Declarative Pipeline structure (e.g., always {} placed outside post {}) or missing braces.
 
-Incorrect Declarative Pipeline structure (e.g., always {} placed outside post {}) or missing braces.
-
-Fix
-
-In Declarative Pipeline, always must be under post:
-
+**Fix**
+-In Declarative Pipeline, always must be under post:
+```
 post {
   always {
     // steps
   }
 }
-
+```
 Also ensure every stage { ... } block closes before the next stage begins.
