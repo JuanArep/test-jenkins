@@ -25,6 +25,8 @@ On every change to the main branch (detected via Jenkins polling), the pipeline:
 8. Runs a smoke test by starting the JAR and calling GET /api/hello
 
 ## Architecture / workflow
+
+```mermaid
 flowchart LR
   A[Push to GitHub main] --> B[Jenkins pollSCM detects change]
   B --> C[Checkout SCM]
@@ -37,6 +39,7 @@ flowchart LR
   I --> J[Archive JAR artifact]
   J --> K[Smoke test: start JAR + curl /api/hello]
   K --> L[Success]
+```
   
 ## Repo structure (key files)
 
@@ -66,11 +69,9 @@ Run the packaged app:
 Smoke check the endpoint
 
 In another terminal:
-
 ``curl -fsS http://localhost:8081/api/hello``
 
 Expected output:
-
 ``hello``
 
 ## Jenkins pipeline stages
@@ -80,7 +81,6 @@ Jenkins clones this repo into its workspace.
 
 2) Build & Unit Test
 Runs:
-
 ``mvn -B clean test``
 
 Publishes test results from:
@@ -95,14 +95,12 @@ Uploads analysis results to SonarQube.
 
 4) Quality Gate
 Runs:
-
 ``waitForQualityGate abortPipeline: true``
 
 Pipeline fails if the quality gate fails.
 
 5) Package
 Runs:
-
 ``mvn -B clean package -DskipTests``
 
 Produces an executable Spring Boot JAR under target/.
