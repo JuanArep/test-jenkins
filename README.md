@@ -73,7 +73,7 @@ Expected output:
 
 ``hello``
 
-##Jenkins pipeline stages
+## Jenkins pipeline stages
 
 1) Checkout SCM
 Jenkins clones this repo into its workspace.
